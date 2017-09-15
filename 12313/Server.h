@@ -1,6 +1,7 @@
 #include "Net.h"
 #include "Common.h"
 #include <cstring>
+
 class IOCPClass
 {
 protected:
@@ -14,6 +15,7 @@ protected:
 	bool _DoSend(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoContext);
 	bool _BindIOCP(PER_SOCKET_CONTEXT *pSocketContext);
 	void _ShowMessage(const char* szFormat, ...) const;
+	void _AddTask(void* pData);
 private:
 	HANDLE   m_hShutdownEvent;
 	HANDLE m_hIOCP;
@@ -23,10 +25,15 @@ private:
 	_PER_SOCKET_CONTEXT* m_pListenContext;
 	LPFN_ACCEPTEX                m_lpfnAcceptEx;                // AcceptEx 和 GetAcceptExSockaddrs 的函数指针，用于调用这两个扩展函数
 	LPFN_GETACCEPTEXSOCKADDRS    m_lpfnGetAcceptExSockAddrs;
+	std::queue<void* >      m_qTask;
+	std::mutex              m_RecvMutex;
+	
 public:
 	bool Start();
 	void Stop();
 	bool LoadSocketlib();
 	void SetHwnd(HWND hWnd);
+	void SetRecvTask(std::queue<void*> &Queue,std::mutex &mutex,std::condition_variable &cond);
 	IOCPClass(void);
+	std::condition_variable  m_cRecvCond;
 };

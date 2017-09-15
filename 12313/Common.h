@@ -1,6 +1,10 @@
 #include <windows.h>
 #include<gdiplus.h>
 #pragma comment(lib,"gdiplus.lib")
+#include <thread>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
 const int ErStartError = 0; //1表示为成功
 const int ErVersionError = 2;
 const int ErConnectError = 3;

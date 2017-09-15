@@ -1,5 +1,4 @@
 #include "Server.h"
-#include <mutex>
 #include <condition_variable>
 #define  IDC_LIST_BOX 1022
 //#include<windows.h>
@@ -7,8 +6,10 @@ wchar_t* wcString = NULL;
 HWND hListBox;
 HWND hWnd;
 IOCPClass* IOCPModel = NULL;
+std::queue<void*> qRecvTask;
 std::mutex m_Recv;
 std::condition_variable m_cRecv;
+void HandleRecv(IOCPClass iocp);
 LRESULT CALLBACK textprom(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	switch (msg)
@@ -74,7 +75,9 @@ int APIENTRY WinMain(HINSTANCE hCurrentInst, HINSTANCE hPrevInstance, LPSTR lpCm
 	ShowWindow(hListBox, SW_SHOWNORMAL);
     IOCPModel = new IOCPClass;
 	IOCPModel->SetHwnd(hWnd);
-	IOCPModel->Start();
+	IOCPModel->SetRecvTask(qRecvTask, m_Recv, m_cRecv);
+    IOCPModel->Start();
+	std::thread(std::bind(HandleRecv,(void *)IOCPModel));
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		
@@ -84,14 +87,16 @@ int APIENTRY WinMain(HINSTANCE hCurrentInst, HINSTANCE hPrevInstance, LPSTR lpCm
 	return 0;
 
 }
-void HandleRecv()
+void HandleRecv(IOCPClass iocp)
 {
 	while (1)
 	{
 		std::unique_lock<std::mutex> gra(m_Recv);
-		if (false)
+		if (qRecvTask.empty())
 		{
-			m_cRecv.wait(gra);
+			iocp.m_cRecvCond.wait(gra);
 		}
+		void* pData = qRecvTask.front();
+		gra.unlock();
 	}
 }

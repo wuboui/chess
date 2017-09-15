@@ -218,7 +218,7 @@ bool IOCPClass::_PostRecv(PER_IO_CONTEXT* pIoContext)
 	OVERLAPPED* p_ol = &pIoContext->m_Overlapped;
 	pIoContext->ResetBuffer();
 	pIoContext->m_OpType = RECV_POSTED;
-	if (NULL == WSARecv(pIoContext->m_sockAccept, p_wbuf, 1, &dwBytes, &dwFlag, p_ol, NULL))
+	if (-1 == WSARecv(pIoContext->m_sockAccept, p_wbuf, 1, &dwBytes, &dwFlag, p_ol, NULL))
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
@@ -236,12 +236,13 @@ bool IOCPClass::_DoRecv(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoC
 	_ShowMessage("ÊÕµ½  %s:%d", inet_ntoa(Client_addr->sin_addr), ntohs(Client_addr->sin_port));
 	NetHead* pData = (NetHead*)pIoContext->m_wsaBuf.buf;
 	_ShowMessage("NetHead=%d,size=%d", pData->iHead, pData->iMsgSize);
-	switch (pData->iHead)
+	/*switch (pData->iHead)
 	{
 	case 20:
 	default:
 		break;
-	}
+	}*/
+	_AddTask(pData);
 	return _PostRecv(pIoContext);
 }
 
@@ -310,10 +311,23 @@ void IOCPClass::_ShowMessage(const char* szFormat, ...) const
 		
 }
 
+void IOCPClass::_AddTask(void* pData)
+{
+	std::lock_guard<std::mutex> grad(m_RecvMutex);
+	m_qTask.push(pData);
+	m_cRecvCond.notify_one();
+}
+
 void IOCPClass::SetHwnd(HWND hWnd)
 {
 	this->hwnd = hWnd;
 }
+
+void IOCPClass::SetRecvTask(std::queue<void*> &Queue, std::mutex &mutex, std::condition_variable &cond)
+{
+	this->m_qTask = Queue;
+}
+
 
 bool IOCPClass::Start()
 {
