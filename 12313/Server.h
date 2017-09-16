@@ -29,7 +29,6 @@ private:
 	std::queue<void* >      m_qTask;
 	std::mutex              m_RecvMutex;
 	std::condition_variable      m_cRecvCond;
-	std::mutex                   m_RecvMutex;
 	std::queue<void*>            m_qRecvTask;
 	
 public:
@@ -39,5 +38,4 @@ public:
 	void SetHwnd(HWND hWnd);
 	void SetRecvTask(std::queue<void*> &Queue,std::mutex &mutex,std::condition_variable &cond);
 	IOCPClass(void);
-	std::condition_variable  m_cRecvCond;
 };

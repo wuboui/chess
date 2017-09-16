@@ -115,6 +115,10 @@ bool IOCPClass::_InitListen()
 		}
 	}
 	_ShowMessage("Post %d ¸öAccept", (int)10);
+	THREADPARAMS_WORKER* pThreadParams = new THREADPARAMS_WORKER;
+	pThreadParams->pIOCPModel = this;
+	pThreadParams->nThreadNo = 1;
+	std::thread(std::bind(&IOCPClass::_HandleRcev, this, (void *)pThreadParams));
 	return true;
 }
 
@@ -189,12 +193,12 @@ void IOCPClass::_HandleRcev(LPVOID lpParam)
 	while (WAIT_OBJECT_0 != WaitForSingleObject(IOCPModel->m_hShutdownEvent, 0))
 	{
 		std::unique_lock<std::mutex> uniLock(m_RecvMutex);
-		if (m_qRecvTask.empty())
+		if (m_qTask.empty())
 		{
 			m_cRecvCond.wait(uniLock);
 		}
-		void* pData = m_qRecvTask.front();
-		m_qRecvTask.pop();
+		void* pData = m_qTask.front();
+		m_qTask.pop();
 		uniLock.unlock();
 		NetHead* nethead = (NetHead*)pData;
 	}
@@ -235,7 +239,7 @@ bool IOCPClass::_PostRecv(PER_IO_CONTEXT* pIoContext)
 	OVERLAPPED* p_ol = &pIoContext->m_Overlapped;
 	pIoContext->ResetBuffer();
 	pIoContext->m_OpType = RECV_POSTED;
-	if (-1 == WSARecv(pIoContext->m_sockAccept, p_wbuf, 1, &dwBytes, &dwFlag, p_ol, NULL))
+	if (SOCKET_ERROR == WSARecv(pIoContext->m_sockAccept, p_wbuf, 1, &dwBytes, &dwFlag, p_ol, NULL))
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{

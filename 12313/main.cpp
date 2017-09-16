@@ -77,8 +77,7 @@ int APIENTRY WinMain(HINSTANCE hCurrentInst, HINSTANCE hPrevInstance, LPSTR lpCm
 	IOCPModel->SetHwnd(hWnd);
 	IOCPModel->SetRecvTask(qRecvTask, m_Recv, m_cRecv);
     IOCPModel->Start();
-	std::thread(std::bind(HandleRecv,(void *)IOCPModel));
-	while (GetMessage(&msg, NULL, 0, 0))
+    while (GetMessage(&msg, NULL, 0, 0))
 	{
 		
 		TranslateMessage(&msg);
@@ -86,17 +85,4 @@ int APIENTRY WinMain(HINSTANCE hCurrentInst, HINSTANCE hPrevInstance, LPSTR lpCm
 	}
 	return 0;
 
-}
-void HandleRecv(IOCPClass iocp)
-{
-	while (1)
-	{
-		std::unique_lock<std::mutex> gra(m_Recv);
-		if (qRecvTask.empty())
-		{
-			iocp.m_cRecvCond.wait(gra);
-		}
-		void* pData = qRecvTask.front();
-		gra.unlock();
-	}
 }
