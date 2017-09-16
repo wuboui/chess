@@ -78,7 +78,7 @@ ILock::~ILock()
 	if (m_pEvent != NULL)
 	{
 		m_pEvent->release();
-		delete m_pEvent;
+		//delete m_pEvent;
 		m_pEvent = NULL;
 	}
 }

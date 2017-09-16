@@ -53,8 +53,8 @@ LRESULT CALLBACK textprom(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		if (IDYES == result)
 		{
 			SocketTcp->Stop();
-			m_Critiacal_Send.release();
-			m_SendMap.clear();
+			/*m_Critiacal_Send.release();
+			m_SendMap.clear();*/
 			return (DefWindowProc(hwnd, msg, wparam, lparam));
 
 		}
