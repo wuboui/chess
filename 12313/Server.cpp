@@ -181,7 +181,24 @@ bool IOCPClass::_WorkThread(LPVOID lpParam)
 	}
 	return true;
 }
-
+void IOCPClass::_HandleRcev(LPVOID lpParam)
+{
+	THREADPARAMS_WORKER* lparam = (THREADPARAMS_WORKER*)lpParam;
+	IOCPClass* IOCPModel = lparam->pIOCPModel;
+	int ThreadNo = lparam->nThreadNo;
+	while (WAIT_OBJECT_0 != WaitForSingleObject(IOCPModel->m_hShutdownEvent, 0))
+	{
+		std::unique_lock<std::mutex> uniLock(m_RecvMutex);
+		if (m_qRecvTask.empty())
+		{
+			m_cRecvCond.wait(uniLock);
+		}
+		void* pData = m_qRecvTask.front();
+		m_qRecvTask.pop();
+		uniLock.unlock();
+		NetHead* nethead = (NetHead*)pData;
+	}
+}
 bool IOCPClass::_PostAccept(PER_IO_CONTEXT* pAcceptContext)
 {
 	assert(m_pListenContext->m_Socket);

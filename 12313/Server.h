@@ -16,6 +16,7 @@ protected:
 	bool _BindIOCP(PER_SOCKET_CONTEXT *pSocketContext);
 	void _ShowMessage(const char* szFormat, ...) const;
 	void _AddTask(void* pData);
+	void _HandleRcev(LPVOID lpParam);
 private:
 	HANDLE   m_hShutdownEvent;
 	HANDLE m_hIOCP;
@@ -27,6 +28,9 @@ private:
 	LPFN_GETACCEPTEXSOCKADDRS    m_lpfnGetAcceptExSockAddrs;
 	std::queue<void* >      m_qTask;
 	std::mutex              m_RecvMutex;
+	std::condition_variable      m_cRecvCond;
+	std::mutex                   m_RecvMutex;
+	std::queue<void*>            m_qRecvTask;
 	
 public:
 	bool Start();
