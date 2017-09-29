@@ -10,10 +10,11 @@ protected:
 	bool  _WorkThread(LPVOID lpParam);
 	bool _PostAccept(PER_IO_CONTEXT* pAcceptContext);
 	bool _PostRecv(PER_IO_CONTEXT* pIoContext);
-	bool _DoRecv(PER_SOCKET_CONTEXT *pSockerContext,PER_IO_CONTEXT* pIoContext);
+	bool _DoRecv(PER_SOCKET_CONTEXT *pSockerContext,PER_IO_CONTEXT* pIoContext,DWORD bytes);
 	bool _DoAccept(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoContext);
 	bool _DoSend(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoContext);
 	bool _BindIOCP(PER_SOCKET_CONTEXT *pSocketContext);
+	bool _SendGameData(LPVOID lpData,int nSize,int iNetHead,SOCKET sClient);
 	void _ShowMessage(const char* szFormat, ...) const;
 	void _AddTask(void* pData);
 	void _HandleRcev(LPVOID lpParam);

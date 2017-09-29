@@ -38,5 +38,11 @@
     <ClInclude Include="ChessLogic.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Desk.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

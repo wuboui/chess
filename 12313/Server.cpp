@@ -1,6 +1,7 @@
 #include "Server.h"
 #include <thread>
 #include<stdio.h>
+int count = 0;
 IOCPClass::IOCPClass(void)
 {
 	m_hIOCP = NULL;
@@ -115,11 +116,14 @@ bool IOCPClass::_InitListen()
 		}
 	}
 	_ShowMessage("Post %d 个Accept", (int)10);
-	THREADPARAMS_WORKER* pThreadParams = new THREADPARAMS_WORKER;
-	pThreadParams->pIOCPModel = this;
-	pThreadParams->nThreadNo = 1;
-	std::thread(std::bind(&IOCPClass::_HandleRcev, this, (void *)pThreadParams));
-	return true;
+	for (int i = 0; i < 4; i++)
+	{
+		THREADPARAMS_WORKER* pThreadParams = new THREADPARAMS_WORKER;
+		pThreadParams->pIOCPModel = this;
+		pThreadParams->nThreadNo = i + 1;
+		new std::thread(std::bind(&IOCPClass::_HandleRcev, this, (void *)pThreadParams));
+	}
+		return true;
 }
 
 bool IOCPClass::_WorkThread(LPVOID lpParam)
@@ -128,15 +132,16 @@ bool IOCPClass::_WorkThread(LPVOID lpParam)
 	IOCPClass* IOCPModel = (IOCPClass *)pParam->pIOCPModel;
 	int ThreadID = (int)pParam->nThreadNo;
 	_ShowMessage("WorkThread Start ID:%d  ",ThreadID);
-	OVERLAPPED *pOverlapped = NULL;
-	PER_SOCKET_CONTEXT *pSocketContext = NULL; 
+	
 	DWORD dwBytes = 0;
 	while (WAIT_OBJECT_0 != WaitForSingleObject(IOCPModel->m_hShutdownEvent, 0))
 	{
+		OVERLAPPED *pOverlapped = NULL;
+		PER_SOCKET_CONTEXT *pSocketContext = NULL;
 		BOOL bReaturn = GetQueuedCompletionStatus(
 			IOCPModel->m_hIOCP,
 			&dwBytes,
-			(PULONG_PTR)&pSocketContext,
+			(PULONG_PTR)&pSocketContext,	
 			&pOverlapped,
 			INFINITE);
 		if (NULL == (DWORD)pSocketContext)
@@ -164,7 +169,7 @@ bool IOCPClass::_WorkThread(LPVOID lpParam)
 				{
 				case RECV_POSTED:
 				   {
-									IOCPModel->_DoRecv(pSocketContext, pIOContext);
+									IOCPModel->_DoRecv(pSocketContext, pIOContext,dwBytes);
 									break;
 				    }
 				case ACCEPT_POSTED:
@@ -190,6 +195,7 @@ void IOCPClass::_HandleRcev(LPVOID lpParam)
 	THREADPARAMS_WORKER* lparam = (THREADPARAMS_WORKER*)lpParam;
 	IOCPClass* IOCPModel = lparam->pIOCPModel;
 	int ThreadNo = lparam->nThreadNo;
+	_ShowMessage("Recv线程启动 ID=%d", ThreadNo);
 	while (WAIT_OBJECT_0 != WaitForSingleObject(IOCPModel->m_hShutdownEvent, 0))
 	{
 		std::unique_lock<std::mutex> uniLock(m_RecvMutex);
@@ -198,9 +204,25 @@ void IOCPClass::_HandleRcev(LPVOID lpParam)
 			m_cRecvCond.wait(uniLock);
 		}
 		void* pData = m_qTask.front();
+		;
+		NetHead* nethead = (NetHead*)pData;
+		_ShowMessage("1.%d,%d,id=%d,conut=%d", nethead->iHead, nethead->iMsgSize,ThreadNo,count++);
 		m_qTask.pop();
 		uniLock.unlock();
-		NetHead* nethead = (NetHead*)pData;
+		/*NetHead**/ nethead = (NetHead*)pData;
+		_ShowMessage("%d,%d,threadid=%d", nethead->iHead, nethead->iMsgSize,ThreadNo);
+		switch (nethead->iHead)
+		{
+		case 20:
+		{
+				   S_C_MOVE* pMoveData = (S_C_MOVE*)nethead+1;
+				   _ShowMessage("MoveData=%d",pMoveData->x1);
+				   break;
+		}
+			
+		default:
+			break;
+		}
 	}
 }
 bool IOCPClass::_PostAccept(PER_IO_CONTEXT* pAcceptContext)
@@ -251,19 +273,58 @@ bool IOCPClass::_PostRecv(PER_IO_CONTEXT* pIoContext)
 	return true;
 }
 
-bool IOCPClass::_DoRecv(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoContext)
+bool IOCPClass::_DoRecv(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoContext,DWORD bytes)
 {
+	
 	sockaddr_in* Client_addr = &pSockerContext->m_ClientAddr;
 	_ShowMessage("收到  %s:%d", inet_ntoa(Client_addr->sin_addr), ntohs(Client_addr->sin_port));
-	NetHead* pData = (NetHead*)pIoContext->m_wsaBuf.buf;
-	_ShowMessage("NetHead=%d,size=%d", pData->iHead, pData->iMsgSize);
-	/*switch (pData->iHead)
+	char* RecvData = new char[bytes+1];
+	RecvData[bytes] = '/0';
+	memcpy_s(RecvData, bytes, pIoContext->m_szBuffer, bytes);
+
+	DWORD dwRecvd = 0;
+	do 
 	{
-	case 20:
-	default:
+		/*char* pRecvBufeer = new char[8];
+		int recvcod = ::recv(pSockerContext->m_Socket, (char*)pRecvBufeer, 8, 0);
+		NetHead* pData = (NetHead*)pRecvBufeer;
+		_ShowMessage("NetHead=%d,size=%d,%d", pData->iHead, pData->iMsgSize, recvcod);
+		dwRecvd += recvcod;
+		recvcod = ::recv(pSockerContext->m_Socket, (char*)(pData+1), 17, 0);
+		dwRecvd += recvcod;*/
+		/*switch (pData->iHead)
+		{
+		case 20:
+		default:
 		break;
-	}*/
-	_AddTask(pData);
+		}*/
+		
+		_ShowMessage("收到数据:%s,", pIoContext->m_szBuffer);
+		NetHead* pData = (NetHead*)(pIoContext->m_szBuffer + dwRecvd);
+
+		_ShowMessage("NetHead=%d,size=%d",pData->iHead, pData->iMsgSize);
+		
+		switch (pData->iHead)
+		{
+		case 20:
+		{
+
+				   S_C_MOVE * pMoveData = (S_C_MOVE*)(pIoContext->m_szBuffer + dwRecvd+8);
+				  /* pMoveData->x1 *= iChessWidth;
+				   pMoveData->y1 *= iChessHeight;
+				   pMoveData->x2 *= iChessWidth;
+				   pMoveData->y2 *= iChessHeight;*/
+				   pMoveData->flag = 1;
+				   _SendGameData(pMoveData, sizeof(S_C_MOVE), 20, pIoContext->m_sockAccept);
+		}
+			
+		default:
+		break;
+		}
+		dwRecvd += (sizeof(NetHead)+pData->iMsgSize);
+		//_AddTask(pData);
+	} while (dwRecvd<bytes);
+	
 	return _PostRecv(pIoContext);
 }
 
@@ -309,20 +370,71 @@ bool IOCPClass::_BindIOCP(PER_SOCKET_CONTEXT *pSocketContext)
 
 	if (NULL == hTemp)
 	{
-		_ShowMessage(("执行CreateIoCompletionPort()出现错误.错误代码：%d"), GetLastError());
+		_ShowMessage("执行CreateIoCompletionPort()出现错误.错误代码：%d", GetLastError());
 		return false;
 	}
 
 	return true;
 }
 
+
+bool IOCPClass::_SendGameData(LPVOID lpData, int nSize, int iNetHead,SOCKET sClient)
+{
+	if (SOCKET_ERROR != sClient)
+	{
+		char SendBuff[1500];
+		int iSendSize = sizeof(NetHead);
+		memset(SendBuff, '\0', 1500);
+		NetHead nethead;
+		nethead.iHead = iNetHead;
+		nethead.iMsgSize = nSize;
+		iSendSize += nSize;
+		memcpy_s(SendBuff, sizeof(NetHead), &nethead, sizeof(nethead));
+		if (nSize > 0)
+			CopyMemory(SendBuff + sizeof(NetHead), lpData, nSize);
+		int iSended = 0;
+		int iSendCount = 0;
+		do
+		{
+			int ret = ::send(sClient, (char *)SendBuff + iSended, iSendSize - iSended, 0);
+			if (ret == SOCKET_ERROR)
+			{
+				if (::WSAGetLastError() == WSAEWOULDBLOCK) //网络有阻塞
+				{
+					if (iSendCount++ > 100)//判断重发次数是否超过100次
+						return SOCKET_ERROR;//直接返回 错误
+					else
+					{
+						Sleep(10);	//等待 10 ms，和上面的重发100次，
+						continue;   //重发数据
+					}
+				}
+				else
+					return SOCKET_ERROR;
+			}
+			iSended += ret;
+			iSendCount = 0;
+		} while (iSended < iSendSize);
+		return true;
+	}
+	else
+	{
+		_ShowMessage("Send Faild");
+		return false;
+	}
+}
+
 void IOCPClass::_ShowMessage(const char* szFormat, ...) const
 {
+	SYSTEMTIME time;
+	GetLocalTime(&time);
 	char* cMsg = new char[200];
 	memset(cMsg, '\0', 200);
+	
 	va_list arglist;
 	va_start(arglist, szFormat);
-	vsprintf(cMsg,szFormat, arglist);
+	sprintf(cMsg, "[%2d:%2d:]", time.wMinute, time.wSecond);
+	vsprintf(cMsg+8,szFormat, arglist);
 	if (NULL != hwnd)
 	{
 		SendMessageA(GetDlgItem(hwnd, 1022), LB_ADDSTRING, 0, (LPARAM)cMsg);
@@ -334,7 +446,7 @@ void IOCPClass::_ShowMessage(const char* szFormat, ...) const
 
 void IOCPClass::_AddTask(void* pData)
 {
-	std::lock_guard<std::mutex> grad(m_RecvMutex);
+	
 	m_qTask.push(pData);
 	m_cRecvCond.notify_one();
 }
