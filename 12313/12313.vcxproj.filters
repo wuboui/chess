@@ -44,5 +44,8 @@
     <ClInclude Include="UserInfo.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="DeskManange.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

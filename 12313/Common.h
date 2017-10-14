@@ -4,6 +4,7 @@
 #include <thread>
 #include <queue>
 #include <mutex>
+#include <set>
 #include <condition_variable>
 const int ErStartError = 0; //1表示为成功
 const int ErVersionError = 2;
@@ -27,6 +28,7 @@ const int iChessWidth = 150;
 const int iChessCount = 8;
 const int Horse = 1;
 ////消息协议
+const int MSG_COME_IN = 23;
 const int MSG_MOVE_PIECE = 20;  //落子
 const int MSG_GAMEFINSH = 21; //游戏结束
 const int MSG_GAMEBEGIN = 22;//游戏开始
@@ -54,6 +56,10 @@ struct S_C_MOVE
 	{
 		memset(this, 0, sizeof(S_C_MOVE));
 	}
+};
+struct C_S_COME
+{
+	int index;
 };
 struct NetHead
 {

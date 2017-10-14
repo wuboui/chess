@@ -1,5 +1,7 @@
 #include "Net.h"
 #include "Common.h"
+#include "DeskManange.h"
+#include "UserInfo.h"
 #include <cstring>
 
 class IOCPClass
@@ -16,7 +18,7 @@ protected:
 	bool _BindIOCP(PER_SOCKET_CONTEXT *pSocketContext);
 	bool _SendGameData(LPVOID lpData,int nSize,int iNetHead,SOCKET sClient);
 	void _ShowMessage(const char* szFormat, ...) const;
-	void _AddTask(void* pData);
+	void _AddRecvTask(void* pData);
 	void _HandleRcev(LPVOID lpParam);
 private:
 	HANDLE   m_hShutdownEvent;
@@ -31,7 +33,7 @@ private:
 	std::mutex              m_RecvMutex;
 	std::condition_variable      m_cRecvCond;
 	std::queue<void*>            m_qRecvTask;
-	
+	DeskManage*                  m_GameDeskManage;
 public:
 	bool Start();
 	void Stop();
@@ -39,4 +41,5 @@ public:
 	void SetHwnd(HWND hWnd);
 	void SetRecvTask(std::queue<void*> &Queue,std::mutex &mutex,std::condition_variable &cond);
 	IOCPClass(void);
+	size_t GetClienIndex(_PER_IO_CONTEXT* Client);
 };

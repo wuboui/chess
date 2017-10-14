@@ -10,7 +10,19 @@ IOCPClass::IOCPClass(void)
 	m_lpfnAcceptEx = NULL;
 	m_lpfnGetAcceptExSockAddrs = NULL;
 	m_pListenContext = NULL;
+	m_GameDeskManage = new DeskManage;
 }
+
+size_t IOCPClass::GetClienIndex(_PER_IO_CONTEXT* Client)
+{
+	size_t i = 0;
+	for (; i < m_pListenContext->m_arrayIoContext.size(); ++i)
+	{
+		if (Client = m_pListenContext->m_arrayIoContext.at(i)) break;
+	}
+    return i;
+}
+
 bool IOCPClass::_InitIOCP()
 {
 	m_hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
@@ -217,7 +229,37 @@ void IOCPClass::_HandleRcev(LPVOID lpParam)
 		{
 				   S_C_MOVE* pMoveData = (S_C_MOVE*)nethead+1;
 				   _ShowMessage("MoveData=%d",pMoveData->x1);
+				  
+				   /*pMoveData->x1 *= iChessWidth;
+				   pMoveData->y1 *= iChessHeight;
+				   pMoveData->x2 *= iChessWidth;
+				   pMoveData->y2 *= iChessHeight; */
+				   pMoveData->flag = 1;
+				   for (int i = 0; i < 2; ++i)
+				   {
+					   _SendGameData(pMoveData, sizeof(S_C_MOVE), 20, pIoContext->m_sockAccept);
+
+				   }
 				   break;
+		}
+		case 24:
+		{
+				   C_S_COME* pComeData = (C_S_COME*)nethead + 1;
+				   //进行桌子添加
+				   UserInfo* user = new UserInfo;
+				   user->m_iSocketIndex = pComeData->index;
+				   if (m_GameDeskManage->m_desk.empty() || m_GameDeskManage->m_desk.at(m_GameDeskManage->m_desk.size()-1)->IsFull())
+				   {
+					   Desk* GameDesk = new Desk;
+					   GameDesk->DeskNo = 1; 
+					   if(GameDesk->_setUserInfo(user))
+					        m_GameDeskManage->m_desk.push_back(GameDesk);
+				   }
+				   else
+				   {
+					   int i = m_GameDeskManage->m_desk.size() - 1;
+					   m_GameDeskManage->m_desk.at(i)->_setUserInfo(user);
+				   }
 		}
 			
 		default:
@@ -306,16 +348,19 @@ bool IOCPClass::_DoRecv(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoC
 		
 		switch (pData->iHead)
 		{
-		case 20:
+		case 23:
 		{
 
-				   S_C_MOVE * pMoveData = (S_C_MOVE*)(pIoContext->m_szBuffer + dwRecvd+8);
-				  /* pMoveData->x1 *= iChessWidth;
+				   C_S_COME* pCome = new C_S_COME;
+				   pCome->index = GetClienIndex(pIoContext);
+				   /*S_C_MOVE * pMoveData = (S_C_MOVE*)(pIoContext->m_szBuffer + dwRecvd+8);
+				  / * pMoveData->x1 *= iChessWidth;
 				   pMoveData->y1 *= iChessHeight;
 				   pMoveData->x2 *= iChessWidth;
-				   pMoveData->y2 *= iChessHeight;*/
+				   pMoveData->y2 *= iChessHeight;* /
 				   pMoveData->flag = 1;
-				   _SendGameData(pMoveData, sizeof(S_C_MOVE), 20, pIoContext->m_sockAccept);
+				   _SendGameData(pMoveData, sizeof(S_C_MOVE), 20, pIoContext->m_sockAccept);*/
+				   _SendGameData(pCome, sizeof(C_S_COME), MSG_COME_IN, pIoContext->m_sockAccept);
 		}
 			
 		default:
@@ -336,8 +381,8 @@ bool IOCPClass::_DoAccept(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pI
 	m_lpfnGetAcceptExSockAddrs(pIoContext->m_wsaBuf.buf, pIoContext->m_wsaBuf.len - (iLocalLen + 16) * 2,
 		iLocalLen + 16, iRemoteLen + 16, (LPSOCKADDR*)&LocalAddr, &iLocalLen,(LPSOCKADDR*)& ClientAddr,&iRemoteLen);
 	_ShowMessage("Client Addr=%s:%d Accept  ", inet_ntoa(ClientAddr->sin_addr), ntohs(ClientAddr->sin_port));
-	_ShowMessage("Clent Addr= %s:%d,Msg=%s  ", inet_ntoa(ClientAddr->sin_addr), ntohs(ClientAddr->sin_port), pIoContext->m_wsaBuf.buf);
-	PER_SOCKET_CONTEXT* pNewAcceptContext = new PER_SOCKET_CONTEXT;
+	_ShowMessage("Client Addr=%s:%d,Msg=%s  ", inet_ntoa(ClientAddr->sin_addr), ntohs(ClientAddr->sin_port), pIoContext->m_wsaBuf.buf);
+	PER_SOCKET_CONTEXT* pNewAcceptContext = new PER_SOCKET_CONTEXT; 
 	pNewAcceptContext->m_Socket = pIoContext->m_sockAccept;
 	memcpy_s(&(pNewAcceptContext->m_ClientAddr), sizeof(SOCKADDR_IN), ClientAddr, sizeof(SOCKADDR_IN));
 	if (false == _BindIOCP(pNewAcceptContext))
@@ -444,7 +489,7 @@ void IOCPClass::_ShowMessage(const char* szFormat, ...) const
 		
 }
 
-void IOCPClass::_AddTask(void* pData)
+void IOCPClass::_AddRecvTask(void* pData)
 {
 	
 	m_qTask.push(pData);

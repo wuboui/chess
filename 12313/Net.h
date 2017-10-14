@@ -25,10 +25,10 @@ typedef struct _PER_IO_CONTEXT
 {
 	OVERLAPPED     m_Overlapped;                               // 每一个重叠网络操作的重叠结构(针对每一个Socket的每一个操作，都要有一个)              
 	SOCKET         m_sockAccept;                               // 这个网络操作所使用的Socket
-	WSABUF         m_wsaBuf;                                   // WSA类型的缓冲区，用于给重叠操作传参数的
+	WSABUF         m_wsaBuf;                                   // WSA类型的缓冲区，用于给重叠操作传参数的 
 	char           m_szBuffer[MAX_BUFFER_LEN];                 // 这个是WSABUF里具体存字符的缓冲区
 	OPERATION_TYPE m_OpType;                                   // 标识网络操作的类型(对应上面的枚举)
-
+	size_t         m_SocketIndex;
 	// 初始化
 	_PER_IO_CONTEXT()
 	{
@@ -98,7 +98,7 @@ typedef struct _PER_SOCKET_CONTEXT
 		_PER_IO_CONTEXT* p = new _PER_IO_CONTEXT;
 
 		m_arrayIoContext.push_back(p);
-
+		p->m_SocketIndex = m_arrayIoContext.size() - 1;
 		return p;
 	}
 
