@@ -1,9 +1,7 @@
 #include "Net.h"
 #include "Common.h"
 #include "DeskManange.h"
-#include "UserInfo.h"
 #include <cstring>
-
 class IOCPClass
 {
 protected:
@@ -17,6 +15,7 @@ protected:
 	bool _DoSend(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoContext);
 	bool _BindIOCP(PER_SOCKET_CONTEXT *pSocketContext);
 	bool _SendGameData(LPVOID lpData,int nSize,int iNetHead,SOCKET sClient);
+	bool _SendGameData(LPVOID lpData, int nSize, int iNetHead, int  iIndex);
 	void _ShowMessage(const char* szFormat, ...) const;
 	void _AddRecvTask(void* pData);
 	void _HandleRcev(LPVOID lpParam);
@@ -34,6 +33,8 @@ private:
 	std::condition_variable      m_cRecvCond;
 	std::queue<void*>            m_qRecvTask;
 	DeskManage*                  m_GameDeskManage;
+	std::vector<UserInfo*>       m_iUserInfo;
+	std::vector<SOCKET> m_Socket;
 public:
 	bool Start();
 	void Stop();
@@ -42,4 +43,16 @@ public:
 	void SetRecvTask(std::queue<void*> &Queue,std::mutex &mutex,std::condition_variable &cond);
 	IOCPClass(void);
 	size_t GetClienIndex(_PER_IO_CONTEXT* Client);
+	inline SOCKET GetClienSocket(size_t ClientIndex)
+	{
+		return (ClientIndex >= m_Socket.size() ? 
+			0 : m_Socket.at(ClientIndex));
+	};
+	inline size_t GetSocketIndex(SOCKET SocketContext)
+	{
+		size_t i = 0;
+		for (; i < m_Socket.size(); ++i)
+			if (SocketContext == m_Socket.at(i)) break;
+		return i;
+	}
 };

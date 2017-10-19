@@ -1,6 +1,7 @@
 #include "Server.h"
 #include <thread>
 #include<stdio.h>
+#include "UserInfo.h"
 int count = 0;
 IOCPClass::IOCPClass(void)
 {
@@ -18,7 +19,7 @@ size_t IOCPClass::GetClienIndex(_PER_IO_CONTEXT* Client)
 	size_t i = 0;
 	for (; i < m_pListenContext->m_arrayIoContext.size(); ++i)
 	{
-		if (Client = m_pListenContext->m_arrayIoContext.at(i)) break;
+		if (Client == m_pListenContext->m_arrayIoContext.at(i)) break;
 	}
     return i;
 }
@@ -216,18 +217,18 @@ void IOCPClass::_HandleRcev(LPVOID lpParam)
 			m_cRecvCond.wait(uniLock);
 		}
 		void* pData = m_qTask.front();
-		;
-		NetHead* nethead = (NetHead*)pData;
-		_ShowMessage("1.%d,%d,id=%d,conut=%d", nethead->iHead, nethead->iMsgSize,ThreadNo,count++);
+		
+		SocketRecv* nethead = (SocketRecv*)pData;
+		_ShowMessage("1.%d,%d,id=%d,conut=%d", nethead->head->iHead, nethead->head->iMsgSize,ThreadNo,count++);
 		m_qTask.pop();
 		uniLock.unlock();
-		/*NetHead**/ nethead = (NetHead*)pData;
-		_ShowMessage("%d,%d,threadid=%d", nethead->iHead, nethead->iMsgSize,ThreadNo);
-		switch (nethead->iHead)
+		/*NetHead**/ 
+		_ShowMessage("1.%d,%d,id=%d,conut=%d", nethead->head->iHead, nethead->head->iMsgSize, ThreadNo, count++);
+		switch (nethead->head->iHead)
 		{
 		case 20:
 		{
-				   S_C_MOVE* pMoveData = (S_C_MOVE*)nethead+1;
+				   S_C_MOVE* pMoveData = (S_C_MOVE*)nethead->pData;
 				   _ShowMessage("MoveData=%d",pMoveData->x1);
 				  
 				   /*pMoveData->x1 *= iChessWidth;
@@ -237,7 +238,7 @@ void IOCPClass::_HandleRcev(LPVOID lpParam)
 				   pMoveData->flag = 1;
 				   for (int i = 0; i < 2; ++i)
 				   {
-					   _SendGameData(pMoveData, sizeof(S_C_MOVE), 20, pIoContext->m_sockAccept);
+					   _SendGameData(pMoveData, sizeof(S_C_MOVE), 20,nethead->iSocketIndex );
 
 				   }
 				   break;
@@ -265,6 +266,7 @@ void IOCPClass::_HandleRcev(LPVOID lpParam)
 		default:
 			break;
 		}
+		delete nethead;
 	}
 }
 bool IOCPClass::_PostAccept(PER_IO_CONTEXT* pAcceptContext)
@@ -300,8 +302,9 @@ bool IOCPClass::_PostRecv(PER_IO_CONTEXT* pIoContext)
 	DWORD dwFlag = 0;
 	DWORD dwBytes = 0;
 	WSABUF *p_wbuf = &pIoContext->m_wsaBuf;
+	pIoContext->m_wsaBuf.buf += pIoContext->m_recvBuffLen;
 	OVERLAPPED* p_ol = &pIoContext->m_Overlapped;
-	pIoContext->ResetBuffer();
+	//pIoContext->ResetBuffer();
 	pIoContext->m_OpType = RECV_POSTED;
 	if (SOCKET_ERROR == WSARecv(pIoContext->m_sockAccept, p_wbuf, 1, &dwBytes, &dwFlag, p_ol, NULL))
 	{
@@ -311,6 +314,7 @@ bool IOCPClass::_PostRecv(PER_IO_CONTEXT* pIoContext)
 			return false;
 		}
 	}
+	m_Socket.push_back(pIoContext->m_sockAccept);
 	_ShowMessage("PostRecv Success");
 	return true;
 }
@@ -320,9 +324,6 @@ bool IOCPClass::_DoRecv(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoC
 	
 	sockaddr_in* Client_addr = &pSockerContext->m_ClientAddr;
 	_ShowMessage("收到  %s:%d", inet_ntoa(Client_addr->sin_addr), ntohs(Client_addr->sin_port));
-	char* RecvData = new char[bytes+1];
-	RecvData[bytes] = '/0';
-	memcpy_s(RecvData, bytes, pIoContext->m_szBuffer, bytes);
 
 	DWORD dwRecvd = 0;
 	do 
@@ -341,11 +342,14 @@ bool IOCPClass::_DoRecv(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoC
 		break;
 		}*/
 		
-		_ShowMessage("收到数据:%s,", pIoContext->m_szBuffer);
-		NetHead* pData = (NetHead*)(pIoContext->m_szBuffer + dwRecvd);
-
-		_ShowMessage("NetHead=%d,size=%d",pData->iHead, pData->iMsgSize);
-		
+		_ShowMessage("收到数据:%s,", pIoContext->m_szBuffer + pIoContext->m_recvBuffLen);
+		NetHead* pData = (NetHead*)(pIoContext->m_szBuffer + pIoContext->m_recvBuffLen + dwRecvd);
+		SocketRecv* RecvData = new SocketRecv;
+		RecvData->head = pData;
+		RecvData->iSocketIndex = GetSocketIndex(pIoContext->m_sockAccept);
+		RecvData->pData = (char *)(pData+ 1);
+		_ShowMessage("NetHead=%d,size=%d", pData->iHead, pData->iMsgSize);
+		_AddRecvTask(RecvData);
 		switch (pData->iHead)
 		{
 		case 23:
@@ -369,7 +373,7 @@ bool IOCPClass::_DoRecv(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoC
 		dwRecvd += (sizeof(NetHead)+pData->iMsgSize);
 		//_AddTask(pData);
 	} while (dwRecvd<bytes);
-	
+	pIoContext->m_recvBuffLen += bytes;
 	return _PostRecv(pIoContext);
 }
 
@@ -425,6 +429,53 @@ bool IOCPClass::_BindIOCP(PER_SOCKET_CONTEXT *pSocketContext)
 
 bool IOCPClass::_SendGameData(LPVOID lpData, int nSize, int iNetHead,SOCKET sClient)
 {
+	if (SOCKET_ERROR != sClient)
+	{
+		char SendBuff[1500];
+		int iSendSize = sizeof(NetHead);
+		memset(SendBuff, '\0', 1500);
+		NetHead nethead;
+		nethead.iHead = iNetHead;
+		nethead.iMsgSize = nSize;
+		iSendSize += nSize;
+		memcpy_s(SendBuff, sizeof(NetHead), &nethead, sizeof(nethead));
+		if (nSize > 0)
+			CopyMemory(SendBuff + sizeof(NetHead), lpData, nSize);
+		int iSended = 0;
+		int iSendCount = 0;
+		do
+		{
+			int ret = ::send(sClient, (char *)SendBuff + iSended, iSendSize - iSended, 0);
+			if (ret == SOCKET_ERROR)
+			{
+				if (::WSAGetLastError() == WSAEWOULDBLOCK) //网络有阻塞
+				{
+					if (iSendCount++ > 100)//判断重发次数是否超过100次
+						return SOCKET_ERROR;//直接返回 错误
+					else
+					{
+						Sleep(10);	//等待 10 ms，和上面的重发100次，
+						continue;   //重发数据
+					}
+				}
+				else
+					return SOCKET_ERROR;
+			}
+			iSended += ret;
+			iSendCount = 0;
+		} while (iSended < iSendSize);
+		return true;
+	}
+	else
+	{
+		_ShowMessage("Send Faild");
+		return false;
+	}
+}
+
+bool IOCPClass::_SendGameData(LPVOID lpData, int nSize, int iNetHead, int iIndex)
+{
+	SOCKET sClient = GetClienSocket(iIndex);
 	if (SOCKET_ERROR != sClient)
 	{
 		char SendBuff[1500];

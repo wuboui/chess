@@ -29,6 +29,7 @@ typedef struct _PER_IO_CONTEXT
 	char           m_szBuffer[MAX_BUFFER_LEN];                 // 这个是WSABUF里具体存字符的缓冲区
 	OPERATION_TYPE m_OpType;                                   // 标识网络操作的类型(对应上面的枚举)
 	size_t         m_SocketIndex;
+	size_t         m_recvBuffLen;
 	// 初始化
 	_PER_IO_CONTEXT()
 	{
@@ -38,6 +39,7 @@ typedef struct _PER_IO_CONTEXT
 		m_wsaBuf.buf = m_szBuffer;
 		m_wsaBuf.len = MAX_BUFFER_LEN;
 		m_OpType = NULL_POSTED;
+		m_recvBuffLen = 0;
 	}
 	// 释放掉Socket
 	~_PER_IO_CONTEXT()

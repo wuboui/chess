@@ -1,4 +1,4 @@
-#include "Common.h"
+#pragma once
 class UserInfo
 {
 public:

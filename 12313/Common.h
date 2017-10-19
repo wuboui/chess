@@ -1,3 +1,4 @@
+#pragma  once
 #include <windows.h>
 #include<gdiplus.h>
 #pragma comment(lib,"gdiplus.lib")
@@ -65,6 +66,14 @@ struct NetHead
 {
 	int iMsgSize;
 	int iHead;
+};
+struct  SocketRecv 
+{
+	NetHead* head;
+	int iSocketIndex;
+	char* pData;
+	int  size;
+	
 };
 struct ChessPieces
 {
