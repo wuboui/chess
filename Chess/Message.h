@@ -1,4 +1,5 @@
 #pragma once
+#pragma pack (1)
 #include <stdlib.h>
 #include <string.h>
 #include "Common.h"

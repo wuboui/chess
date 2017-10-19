@@ -64,21 +64,18 @@ void UIChess::initChess()
 
 bool UIChess::HandleMove(void * pData)
 {
-        S_C_MOVE * pMoveData = (S_C_MOVE *)pData;
-        pMoveData->x1 = 2 * iChessWidth;
-        pMoveData->y1 = 2 * iChessHeight;
-        pMoveData->x2 = 1 * iChessWidth;
-        pMoveData->y2 = 1 * iChessHeight;
+	S_C_MOVE * pMoveData = (S_C_MOVE *)pData;
+
         int iIndex = 0;
 		pMoveData->flag = 1;
         if (pMoveData->flag)
         {
             
-            if (pMoveData->x1 < iChessWidth * 8 + iStartPosX && pMoveData->y1 < iChessHeight * 8 + iStartPosY && pMoveData->x1 >= iStartPosX&&pMoveData->y1 >= iStartPosY)
+            if (pMoveData->x1 < iChessCount  && pMoveData->y1 < iChessCount  && pMoveData->x1 >= 0&&pMoveData->y1 >= 0)
             {
 
-                iIndex = ((pMoveData->y1 - iStartPosY) / iChessHeight) * 8 + (pMoveData->x1 - iStartPosX) / iChessWidth;
-                int iClickIndex= ((pMoveData->y2 - iStartPosY) / iChessHeight) * 8 + (pMoveData->x2 - iStartPosX) / iChessWidth;
+				iIndex = pMoveData->x2   + pMoveData->y2 * iChessCount;
+                int iClickIndex= pMoveData->x1  + pMoveData->y1 * iChessCount;
                 if (iClickIndex != iIndex && iClickIndex != 255)
                 {
                     ChessArr[iClickIndex]->bClick = false;
@@ -96,4 +93,5 @@ bool UIChess::HandleMove(void * pData)
         {
         }
         return true;
+		
 }

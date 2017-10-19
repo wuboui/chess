@@ -146,23 +146,20 @@ LRESULT CALLBACK textprom(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						   int  y = HIWORD(lparam); //取得鼠标y坐标值(高位字节的信息)
 						   int iIndex = 0;
 						//   SocketTcp->SendData();
-						/*   if (x < iChessWidth * 8 + iStartPosX && y < iChessHeight * 8 + iStartPosY && x >= iStartPosX&&y >= iStartPosY)
+						   if (x < iChessWidth * 8 + iStartPosX && y < iChessHeight * 8 + iStartPosY && x >= iStartPosX&&y >= iStartPosY)
 						   {
 
 							   if (UI->iOldX != 0 && UI->iOldY != 0)
 							   {
 								   if (Logic->CanMove((x - iStartPosX) / iChessCount, (y - iStartPosY) / iChessCount,
 									   (UI->iOldX - iStartPosX) / iChessCount, (UI->iOldY - iStartPosY) / iChessCount, *UI->ChessArr))
-								   {*/
+								   {
 									   S_C_MOVE* MoveData = new S_C_MOVE;
-									   MoveData->x1 = (x - iStartPosX) / iChessCount;
-									   MoveData->y1 = (y - iStartPosY) / iChessCount;
-									   MoveData->x2 = (UI->iOldX - iStartPosX) / iChessCount;
-									   MoveData->y2 = (UI->iOldY - iStartPosY) / iChessCount;
+									   MoveData->x1 = (x - iStartPosX) / iChessWidth;
+									   MoveData->y1 = (y - iStartPosY) / iChessHeight;
+									   MoveData->x2 = (UI->iOldX - iStartPosX) / iChessWidth;
+									   MoveData->y2 = (UI->iOldY - iStartPosY) / iChessHeight;
 									   SendData(MoveData, MSG_MOVE_PIECE);
-									   SendData(MoveData, MSG_MOVE_PIECE);
-									   SendData(MoveData, MSG_MOVE_PIECE);
-					/*				   
 									   {
 										   UI->iOldX = 0;
 										   UI->iOldY = 0;
@@ -174,7 +171,7 @@ LRESULT CALLBACK textprom(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								   UI->iOldX = x;
 								   UI->iOldY = y;
 							   }
-						   }*/
+						   }
 						   /* InvalidateRect(hwnd, NULL, false);*/
 
 						   break;
@@ -189,7 +186,10 @@ LRESULT CALLBACK textprom(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	}
 	case WM_SOCKET_MESSAGE:
 	{
-							  SocketTcp->OnSocketNoti(wparam, lparam);
+							  if (SocketTcp->OnSocketNoti(wparam, lparam))
+							  {
+								  InvalidateRect(hwnd, NULL, false);
+							  }
 	}
 	default:break;
 	}
@@ -257,7 +257,7 @@ unsigned int _stdcall SendThreadProc(void* lParam)
 
 void game_main(HWND hWnd)
 {
-
+	
 }
 
 int APIENTRY WinMain(HINSTANCE hCurrentInst, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int iCmdShow)
@@ -282,7 +282,7 @@ int APIENTRY WinMain(HINSTANCE hCurrentInst, HINSTANCE hPrevInstance, LPSTR lpCm
 	RegisterClass(&wndclass);
 
 	hWnd = CreateWindow(L"窗体", L"111", WS_DLGFRAME | WS_MINIMIZEBOX | WS_SYSMENU,
-		50, 50,
+		iStartPosX, iStartPosY,
 		1600, 2600,
 		NULL, NULL,
 		hCurrentInst, NULL);

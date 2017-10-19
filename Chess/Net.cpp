@@ -68,7 +68,6 @@ int TCPSocketClient::SendData()
    
     return true;
 }
-
 int TCPSocketClient::SendGameData(void * pData, int iNetHead, int iSize)
 {
     if (sClient != SOCKET_ERROR)
@@ -124,7 +123,7 @@ LRESULT TCPSocketClient::OnSocketNoti(WPARAM wParam, LPARAM lParam)
     {
 					   UINT uErrorCode = WSAGETSELECTERROR(lParam);
 					   if (uErrorCode != 0)  closesocket(sClient);
-					  
+					   SendData();
 					   return 0;
         break;
     }
@@ -134,9 +133,9 @@ LRESULT TCPSocketClient::OnSocketNoti(WPARAM wParam, LPARAM lParam)
         memset(buffer, '\0', 1500);
         int iLen = ::recv(sClient, buffer, 1500, 0);
         NetHead* pNetData = (NetHead *)buffer;
-		pNetData->iHead = MSG_MOVE_PIECE;
+		//pNetData->iHead = MSG_MOVE_PIECE;
         /*if(pNetData->iMsgSize > ) ¿¼ÂÇ·ÖÆ¬´«Êä*/
-        this->HandleRecv(pNetData+1,pNetData->iHead);
+        return this->HandleRecv(pNetData+1,pNetData->iHead);
         break;
     }
     }

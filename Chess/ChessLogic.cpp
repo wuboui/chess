@@ -2,9 +2,10 @@
 
 bool ChessLogic::CanMove(int x1, int y1, int x2, int y2, ChessPieces Chess[])
 {
+	return true;
     switch (Chess[x1*iChessCount + y1].iType)
     {
-    case Horse: CanMove_Horse(x1, y1, x2, y2);
+    case Horse: return CanMove_Horse(x1, y1, x2, y2);
     default:
         break;
     }
