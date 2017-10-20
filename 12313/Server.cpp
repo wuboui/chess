@@ -229,18 +229,18 @@ void IOCPClass::_HandleRcev(LPVOID lpParam)
 		case 20:
 		{
 				   S_C_MOVE* pMoveData = (S_C_MOVE*)nethead->pData;
-				   _ShowMessage("MoveData=%d",pMoveData->x1);
+				   _ShowMessage("MoveData=%d,%d,%d,%d", pMoveData->x1, pMoveData->y1, pMoveData->x2, pMoveData->y2);
 				  
 				   /*pMoveData->x1 *= iChessWidth;
 				   pMoveData->y1 *= iChessHeight;
 				   pMoveData->x2 *= iChessWidth;
 				   pMoveData->y2 *= iChessHeight; */
 				   pMoveData->flag = 1;
-				   for (int i = 0; i < 2; ++i)
-				   {
+				 /*  for (int i = 0; i < 2; ++i)
+				   {*/
 					   _SendGameData(pMoveData, sizeof(S_C_MOVE), 20,nethead->iSocketIndex );
 
-				   }
+				  // }
 				   break;
 		}
 		case 24:
@@ -302,7 +302,7 @@ bool IOCPClass::_PostRecv(PER_IO_CONTEXT* pIoContext)
 	DWORD dwFlag = 0;
 	DWORD dwBytes = 0;
 	WSABUF *p_wbuf = &pIoContext->m_wsaBuf;
-	pIoContext->m_wsaBuf.buf += pIoContext->m_recvBuffLen;
+	//pIoContext->m_wsaBuf.buf += pIoContext->m_recvBuffLen;
 	OVERLAPPED* p_ol = &pIoContext->m_Overlapped;
 	//pIoContext->ResetBuffer();
 	pIoContext->m_OpType = RECV_POSTED;
@@ -374,6 +374,7 @@ bool IOCPClass::_DoRecv(PER_SOCKET_CONTEXT *pSockerContext, PER_IO_CONTEXT* pIoC
 		//_AddTask(pData);
 	} while (dwRecvd<bytes);
 	pIoContext->m_recvBuffLen += bytes;
+	pIoContext->m_wsaBuf.buf += bytes;
 	return _PostRecv(pIoContext);
 }
 
