@@ -15,39 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ChessLogic.cpp">
+    <ClCompile Include="..\12313\test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="cJSON.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Server.cpp">
+    <ClCompile Include="..\12313\cJSON.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Net.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="ChessLogic.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Desk.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="UserInfo.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="DeskManange.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="cJSON.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Common.h">
+    <ClInclude Include="..\12313\cJSON.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -40,7 +40,7 @@ void SetMsg(char* msg,int iSize)
 	swprintf_s(wcString, 200, (wchar_t*)msg, iSize);
 	SendMessageA(GetDlgItem(hWnd, IDC_LIST_BOX), LB_ADDSTRING, NULL, (LPARAM)wcString);
 }
-int APIENTRY WinMain(HINSTANCE hCurrentInst, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int iCmdShow)
+int /*APIENTRY WinMain*/ runa(HINSTANCE hCurrentInst, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int iCmdShow)
 {
 	WNDCLASS wndclass;
 	MSG msg;
