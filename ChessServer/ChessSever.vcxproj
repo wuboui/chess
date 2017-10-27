@@ -14,7 +14,6 @@
     <ProjectGuid>{5D5DDF17-F21A-4404-A2A7-165A27B61DB3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>My12313</RootNamespace>
-    <ProjectName>ChessServer</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
