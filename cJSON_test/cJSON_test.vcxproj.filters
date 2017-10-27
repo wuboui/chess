@@ -15,15 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\12313\cJSON.c">
+    <ClCompile Include="test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\12313\test.cpp">
+    <ClCompile Include="cJSON.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\12313\cJSON.h">
+    <ClInclude Include="cJSON.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -10,6 +10,13 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="cJSON.c" />
+    <ClCompile Include="test.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cJSON.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B488CE66-06C2-450A-8098-7DA33CA2E5AF}</ProjectGuid>
     <RootNamespace>cJSON_test</RootNamespace>
@@ -72,13 +79,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\12313\cJSON.c" />
-    <ClCompile Include="..\12313\test.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\12313\cJSON.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
