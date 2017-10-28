@@ -213,10 +213,24 @@ void sendGetRequest()
 std::wstring UTF8ToUnicode(const std::string &str)
 {
 	int len = str.length();
-	int unicodelen = ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), len, NULL, 0);
+	int unicodelen = ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
 	wchar_t *pUnicode = new wchar_t[unicodelen + 1];
 	memset(pUnicode, 0, (unicodelen + 1)*sizeof(wchar_t));
-	::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), len, (LPWSTR)pUnicode, unicodelen);
+	::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, (LPWSTR)pUnicode, unicodelen);
+	std::wstring  rt;
+	rt = (wchar_t *)pUnicode;
+	delete  pUnicode;
+
+	return  rt;
+
+};
+std::wstring UTF8ToUnicode(const char* str)
+{
+	//int len = str.length();
+	int unicodelen = ::MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+	wchar_t *pUnicode = new wchar_t[unicodelen + 1];
+	memset(pUnicode, '\0', (unicodelen + 1)*sizeof(wchar_t));
+	::MultiByteToWideChar(CP_UTF8, 0, str, -1, (LPWSTR)pUnicode, unicodelen);
 	std::wstring  rt;
 	rt = (wchar_t *)pUnicode;
 	delete  pUnicode;
@@ -261,10 +275,44 @@ bool CurlSendGets(const std::string& strUrl,std::string& strResponse,const char*
 	curl_easy_cleanup(curl);
 	return res;
 }
+bool DownLoadVCode()
+{
+	std::string codeUrl = "https://kyfw.12306.cn:443/otn/passcodeNew/getPassCodeNew";
+	codeUrl.append("?module=&rand=randp&");
+	double d = rand()*1.000000 / RAND_MAX;
+	std::string strResponse;
+	bool res = CurlSendGets(codeUrl, strResponse, NULL);
+	time_t now = time(NULL);
+	struct tm* Nowtime = localtime(&now);
+	char szVcodeName[256];
+	memset(szVcodeName, 0, sizeof(szVcodeName));
+	sprintf(szVcodeName, "vcode%04d%02d%02d%02d%02d%02d.jpg", 1900 + Nowtime->tm_year, 1 + Nowtime->tm_mon, Nowtime->tm_mday,
+		Nowtime->tm_hour, Nowtime->tm_min, Nowtime->tm_sec);
+	FILE * fp = fopen(szVcodeName, "wb");
+	if (NULL == fp)
+		return false;
+	size_t count_in = fwrite(strResponse.data(), strResponse.length(), 1, fp);
+	fclose(fp);
+	return true;
+}
 int main()
 {
 	std::string strResponse;
 	bool result = CurlSendGets("https://kyfw.12306.cn/otn/leftTicket/query?leftTicketDTO.train_date=2017-10-28&leftTicketDTO.from_station=BJP&leftTicketDTO.to_station=SHH&purpose_codes=ADULT",strResponse,NULL);
-	wprintf(UTF8ToUnicode(strResponse).c_str());
+	cJSON* cJSONRoot = cJSON_Parse(strResponse.c_str());
+	cJSON* pSub = cJSON_GetObjectItem(cJSONRoot,"data");
+	if (NULL != pSub)
+	{
+		cJSON* pSubSub = cJSON_GetObjectItem(pSub, "result");
+		for (int i = 0; i < cJSON_GetArraySize(pSubSub); ++i)
+		{
+			std::wstring str = UTF8ToUnicode(cJSON_GetArrayItem(pSubSub, i)->valuestring);
+			wprintf(L"%s", UTF8ToUnicode(cJSON_GetArrayItem(pSubSub, i)->valuestring));
+			printf("\n\n\n\n\n");
+		}
+		printf("\n");
+	}
+	wprintf(L"%s",UTF8ToUnicode(strResponse).c_str());
+	DownLoadVCode();
 	return 0;
 }
